@@ -1,0 +1,18 @@
+# Secrets
+.env
+
+# Dataset (large files)
+data/*.txt
+data/*.gz
+data/*.csv
+!data/.gitkeep
+
+# Binaries
+bin/
+*.exe
+benchmark
+
+# OS / IDE
+.DS_Store
+.vscode/
+.idea/
