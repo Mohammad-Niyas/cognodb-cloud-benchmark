@@ -1,0 +1,9 @@
+{
+  "generated_at": "2026-08-13T13:47:15Z",
+  "sampling_method": "BFS Snowball Sampling (Giant Component)",
+  "start_node_id": 1,
+  "total_nodes": 30000,
+  "total_relationships": 393090,
+  "nodes_file_sha256": "073a5c690ac92078e98d540f4e563c99208b54675c340762b95833d199ca9e42",
+  "relationships_file_sha256": "6374fa580350addfde3a24bfe7f843c2dc373c619fc1dc7b203fb1e83ddd6114"
+}
