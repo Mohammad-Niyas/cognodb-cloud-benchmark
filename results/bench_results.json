@@ -1,1 +1,426 @@
-{}
+{
+  "ArangoDB Remote VM": {
+    "timestamp": "2026-08-13T20:56:47Z",
+    "dataset_summary": {
+      "total_nodes": 30000,
+      "total_relationships": 393090
+    },
+    "resource_footprint": {
+      "instance_tier": "Cloud Free / Entry Tier",
+      "notes": "Managed cloud free-tier telemetry is restricted; instance specifications are recorded in README Section 3.2.",
+      "status": "not_observable_via_driver"
+    },
+    "ingestion_metrics": {
+      "nodes_inserted": 30000,
+      "nodes_load_time_sec": 10.578372214,
+      "nodes_per_sec": 2835.975081335893,
+      "rels_inserted": 393090,
+      "rels_load_time_sec": 130.089976512,
+      "rels_per_sec": 3021.677845900294,
+      "total_load_time_sec": 140.668348726
+    },
+    "read_workloads": {
+      "engine_name": "ArangoDB Remote VM",
+      "one_hop": {
+        "count": 100,
+        "min_ms": 249.410108,
+        "p50_ms": 252.430718,
+        "p95_ms": 272.763428,
+        "p99_ms": 299.859467,
+        "max_ms": 299.859467,
+        "avg_ms": 253.849759,
+        "error_count": 0,
+        "error_rate_pct": 0
+      },
+      "two_hop": {
+        "count": 100,
+        "min_ms": 249.499085,
+        "p50_ms": 255.297416,
+        "p95_ms": 299.915629,
+        "p99_ms": 456.138529,
+        "max_ms": 456.138529,
+        "avg_ms": 263.078731,
+        "error_count": 0,
+        "error_rate_pct": 0
+      },
+      "three_hop": {
+        "count": 100,
+        "min_ms": 250.545657,
+        "p50_ms": 261.887613,
+        "p95_ms": 288.197697,
+        "p99_ms": 363.432607,
+        "max_ms": 363.432607,
+        "avg_ms": 262.797171,
+        "error_count": 0,
+        "error_rate_pct": 0
+      },
+      "point_lookup": {
+        "count": 100,
+        "min_ms": 249.347734,
+        "p50_ms": 252.222996,
+        "p95_ms": 254.582906,
+        "p99_ms": 255.932628,
+        "max_ms": 255.932628,
+        "avg_ms": 251.953123,
+        "error_count": 0,
+        "error_rate_pct": 0
+      },
+      "filtered_lookup": {
+        "count": 100,
+        "min_ms": 257.238485,
+        "p50_ms": 260.492222,
+        "p95_ms": 263.167461,
+        "p99_ms": 281.234065,
+        "max_ms": 281.234065,
+        "avg_ms": 260.549345,
+        "error_count": 0,
+        "error_rate_pct": 0
+      },
+      "aggregation": {
+        "count": 100,
+        "min_ms": 420.40362,
+        "p50_ms": 431.086418,
+        "p95_ms": 494.637235,
+        "p99_ms": 891.909913,
+        "max_ms": 891.909913,
+        "avg_ms": 449.563532,
+        "error_count": 0,
+        "error_rate_pct": 0
+      }
+    },
+    "concurrency_1_worker": {
+      "engine_name": "ArangoDB Remote VM",
+      "worker_count": 1,
+      "duration_sec": 15.250501837,
+      "total_queries": 48,
+      "sustained_qps": 3.147437409800169,
+      "latency_result": {
+        "count": 48,
+        "min_ms": 250.425952,
+        "p50_ms": 254.936609,
+        "p95_ms": 545.063375,
+        "p99_ms": 566.788299,
+        "max_ms": 566.788299,
+        "avg_ms": 317.713129,
+        "error_count": 0,
+        "error_rate_pct": 0
+      }
+    },
+    "concurrency_10_workers": {
+      "engine_name": "ArangoDB Remote VM",
+      "worker_count": 10,
+      "duration_sec": 15.2523596,
+      "total_queries": 512,
+      "sustained_qps": 33.56857649750141,
+      "latency_result": {
+        "count": 512,
+        "min_ms": 247.353125,
+        "p50_ms": 273.453685,
+        "p95_ms": 439.034317,
+        "p99_ms": 542.022261,
+        "max_ms": 596.074494,
+        "avg_ms": 295.789944,
+        "error_count": 0,
+        "error_rate_pct": 0
+      }
+    },
+    "concurrency_40_workers": {
+      "engine_name": "ArangoDB Remote VM",
+      "worker_count": 40,
+      "duration_sec": 15.263852371,
+      "total_queries": 2122,
+      "sustained_qps": 139.02126071604417,
+      "latency_result": {
+        "count": 2122,
+        "min_ms": 246.512665,
+        "p50_ms": 271.87418,
+        "p95_ms": 347.497755,
+        "p99_ms": 541.454917,
+        "max_ms": 961.393528,
+        "avg_ms": 284.904116,
+        "error_count": 0,
+        "error_rate_pct": 0
+      }
+    }
+  },
+  "CognoDB Cloud": {
+    "timestamp": "2026-08-13T20:45:01Z",
+    "dataset_summary": {
+      "total_nodes": 30000,
+      "total_relationships": 393090
+    },
+    "resource_footprint": {
+      "instance_tier": "Cloud Free / Entry Tier",
+      "notes": "Managed cloud free-tier telemetry is restricted; instance specifications are recorded in README Section 3.2.",
+      "status": "not_observable_via_driver"
+    },
+    "ingestion_metrics": {},
+    "read_workloads": {
+      "engine_name": "CognoDB Cloud",
+      "one_hop": {
+        "count": 100,
+        "min_ms": 831.690088,
+        "p50_ms": 837.845901,
+        "p95_ms": 843.781415,
+        "p99_ms": 868.743752,
+        "max_ms": 868.743752,
+        "avg_ms": 837.903931,
+        "error_count": 0,
+        "error_rate_pct": 0
+      },
+      "two_hop": {
+        "count": 100,
+        "min_ms": 829.502217,
+        "p50_ms": 838.138111,
+        "p95_ms": 1131.101132,
+        "p99_ms": 1733.411544,
+        "max_ms": 1733.411544,
+        "avg_ms": 870.419886,
+        "error_count": 0,
+        "error_rate_pct": 0
+      },
+      "three_hop": {
+        "count": 100,
+        "min_ms": 833.289287,
+        "p50_ms": 1131.795454,
+        "p95_ms": 1896.515475,
+        "p99_ms": 2472.246405,
+        "max_ms": 2472.246405,
+        "avg_ms": 1110.534587,
+        "error_count": 0,
+        "error_rate_pct": 0
+      },
+      "point_lookup": {
+        "count": 100,
+        "min_ms": 829.983483,
+        "p50_ms": 838.405379,
+        "p95_ms": 847.987343,
+        "p99_ms": 873.169827,
+        "max_ms": 873.169827,
+        "avg_ms": 838.629178,
+        "error_count": 0,
+        "error_rate_pct": 0
+      },
+      "filtered_lookup": {
+        "count": 100,
+        "min_ms": 837.802373,
+        "p50_ms": 844.002644,
+        "p95_ms": 852.042116,
+        "p99_ms": 1018.938935,
+        "max_ms": 1018.938935,
+        "avg_ms": 846.873535,
+        "error_count": 0,
+        "error_rate_pct": 0
+      },
+      "aggregation": {
+        "count": 100,
+        "min_ms": 1603.894262,
+        "p50_ms": 1704.639872,
+        "p95_ms": 1795.714009,
+        "p99_ms": 1872.259272,
+        "max_ms": 1872.259272,
+        "avg_ms": 1709.513489,
+        "error_count": 0,
+        "error_rate_pct": 0
+      }
+    },
+    "concurrency_1_worker": {
+      "engine_name": "CognoDB Cloud",
+      "worker_count": 1,
+      "duration_sec": 15.077186484,
+      "total_queries": 18,
+      "sustained_qps": 1.1938566932963062,
+      "latency_result": {
+        "count": 18,
+        "min_ms": 832.091508,
+        "p50_ms": 838.016638,
+        "p95_ms": 848.250844,
+        "p99_ms": 848.250844,
+        "max_ms": 848.250844,
+        "avg_ms": 837.606963,
+        "error_count": 0,
+        "error_rate_pct": 0
+      }
+    },
+    "concurrency_10_workers": {
+      "engine_name": "CognoDB Cloud",
+      "worker_count": 10,
+      "duration_sec": 15.806331916,
+      "total_queries": 174,
+      "sustained_qps": 11.008246627028505,
+      "latency_result": {
+        "count": 174,
+        "min_ms": 804.190175,
+        "p50_ms": 824.32327,
+        "p95_ms": 2000.011423,
+        "p99_ms": 2062.48272,
+        "max_ms": 2092.501553,
+        "avg_ms": 888.15027,
+        "error_count": 0,
+        "error_rate_pct": 0
+      }
+    },
+    "concurrency_40_workers": {
+      "engine_name": "CognoDB Cloud",
+      "worker_count": 40,
+      "duration_sec": 15.7733529,
+      "total_queries": 687,
+      "sustained_qps": 43.554468371781624,
+      "latency_result": {
+        "count": 687,
+        "min_ms": 772.597159,
+        "p50_ms": 819.527757,
+        "p95_ms": 1941.410246,
+        "p99_ms": 2146.065422,
+        "max_ms": 2398.344407,
+        "avg_ms": 893.494587,
+        "error_count": 0,
+        "error_rate_pct": 0
+      }
+    }
+  },
+  "Neo4j AuraDB": {
+    "timestamp": "2026-08-13T20:11:42Z",
+    "dataset_summary": {
+      "total_nodes": 30000,
+      "total_relationships": 393090
+    },
+    "resource_footprint": {
+      "instance_tier": "Cloud Free / Entry Tier",
+      "notes": "Managed cloud free-tier telemetry is restricted; instance specifications are recorded in README Section 3.2.",
+      "status": "not_observable_via_driver"
+    },
+    "ingestion_metrics": {
+      "nodes_inserted": 30000,
+      "nodes_load_time_sec": 1.7694784970000002,
+      "nodes_per_sec": 16954.147818615733,
+      "rels_inserted": 393090,
+      "rels_load_time_sec": 31.22198171,
+      "rels_per_sec": 12590.168159444482,
+      "total_load_time_sec": 32.991460207
+    },
+    "read_workloads": {
+      "engine_name": "Neo4j AuraDB",
+      "one_hop": {
+        "count": 100,
+        "min_ms": 173.537788,
+        "p50_ms": 178.516616,
+        "p95_ms": 181.41662,
+        "p99_ms": 237.404972,
+        "max_ms": 237.404972,
+        "avg_ms": 179.358145,
+        "error_count": 0,
+        "error_rate_pct": 0
+      },
+      "two_hop": {
+        "count": 100,
+        "min_ms": 171.297101,
+        "p50_ms": 181.001957,
+        "p95_ms": 269.628754,
+        "p99_ms": 518.990751,
+        "max_ms": 518.990751,
+        "avg_ms": 201.534831,
+        "error_count": 0,
+        "error_rate_pct": 0
+      },
+      "three_hop": {
+        "count": 100,
+        "min_ms": 174.076846,
+        "p50_ms": 250.474577,
+        "p95_ms": 349.589709,
+        "p99_ms": 406.84028,
+        "max_ms": 406.84028,
+        "avg_ms": 239.21813,
+        "error_count": 0,
+        "error_rate_pct": 0
+      },
+      "point_lookup": {
+        "count": 100,
+        "min_ms": 166.000622,
+        "p50_ms": 177.684079,
+        "p95_ms": 236.518811,
+        "p99_ms": 318.01127,
+        "max_ms": 318.01127,
+        "avg_ms": 183.272193,
+        "error_count": 0,
+        "error_rate_pct": 0
+      },
+      "filtered_lookup": {
+        "count": 100,
+        "min_ms": 177.716522,
+        "p50_ms": 184.703768,
+        "p95_ms": 193.653369,
+        "p99_ms": 244.583694,
+        "max_ms": 244.583694,
+        "avg_ms": 186.479478,
+        "error_count": 0,
+        "error_rate_pct": 0
+      },
+      "aggregation": {
+        "count": 100,
+        "min_ms": 219.814629,
+        "p50_ms": 228.738964,
+        "p95_ms": 267.933975,
+        "p99_ms": 330.114543,
+        "max_ms": 330.114543,
+        "avg_ms": 234.207414,
+        "error_count": 0,
+        "error_rate_pct": 0
+      }
+    },
+    "concurrency_1_worker": {
+      "engine_name": "Neo4j AuraDB",
+      "worker_count": 1,
+      "duration_sec": 15.040756245,
+      "total_queries": 84,
+      "sustained_qps": 5.58482556539829,
+      "latency_result": {
+        "count": 84,
+        "min_ms": 169.812636,
+        "p50_ms": 176.631074,
+        "p95_ms": 182.945495,
+        "p99_ms": 251.236179,
+        "max_ms": 251.236179,
+        "avg_ms": 179.018675,
+        "error_count": 0,
+        "error_rate_pct": 0
+      }
+    },
+    "concurrency_10_workers": {
+      "engine_name": "Neo4j AuraDB",
+      "worker_count": 10,
+      "duration_sec": 15.140592196,
+      "total_queries": 852,
+      "sustained_qps": 56.272567741775006,
+      "latency_result": {
+        "count": 852,
+        "min_ms": 161.310849,
+        "p50_ms": 171.829774,
+        "p95_ms": 182.989307,
+        "p99_ms": 561.98819,
+        "max_ms": 577.481101,
+        "avg_ms": 177.090117,
+        "error_count": 0,
+        "error_rate_pct": 0
+      }
+    },
+    "concurrency_40_workers": {
+      "engine_name": "Neo4j AuraDB",
+      "worker_count": 40,
+      "duration_sec": 15.171267049,
+      "total_queries": 3533,
+      "sustained_qps": 232.8744190309981,
+      "latency_result": {
+        "count": 3533,
+        "min_ms": 150.605424,
+        "p50_ms": 167.246006,
+        "p95_ms": 178.509033,
+        "p99_ms": 210.279113,
+        "max_ms": 598.139383,
+        "avg_ms": 170.88535,
+        "error_count": 0,
+        "error_rate_pct": 0
+      }
+    }
+  }
+}
