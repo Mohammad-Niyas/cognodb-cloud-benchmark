@@ -17,13 +17,15 @@ type FullBenchmarkReport struct {
 	DatasetSummary    map[string]any     `json:"dataset_summary"`
 	ResourceFootprint map[string]any     `json:"resource_footprint"`
 	Ingestion         map[string]any     `json:"ingestion_metrics"`
+	IndexCreation     map[string]any     `json:"index_creation"`
 	Workloads         *WorkloadReport    `json:"read_workloads"`
 	Concurrency1      *ConcurrencyReport `json:"concurrency_1_worker"`
 	Concurrency10     *ConcurrencyReport `json:"concurrency_10_workers"`
 	Concurrency40     *ConcurrencyReport `json:"concurrency_40_workers"`
 }
 
-// ExecuteSuite runs the full benchmark suite across all provided database engines
+// ExecuteSuite orchestrates the complete benchmark workflow following strict scientific methodology:
+// 1. Raw Data Ingestion (isolated timing) -> 2. Count Verification -> 3. Index Creation -> 4. Warm-up -> 5. Read Benchmarks -> 6. Concurrency Stress Sweeps.
 func ExecuteSuite(ctx context.Context, engines []driver.GraphEngine, data *dataset.CanonicalData, cfg *config.Config, skipLoad bool, batchSize int) map[string]FullBenchmarkReport {
 	allResults := make(map[string]FullBenchmarkReport)
 
@@ -31,8 +33,9 @@ func ExecuteSuite(ctx context.Context, engines []driver.GraphEngine, data *datas
 	expectedRels := int64(len(data.Relationships))
 
 	for _, engine := range engines {
+		fmt.Printf("\n==========================================================\n")
 		fmt.Printf("  BENCHMARKING TARGET: %s\n", engine.Name())
-		fmt.Println()
+		fmt.Printf("==========================================================\n")
 
 		report := FullBenchmarkReport{
 			Timestamp: time.Now().UTC().Format(time.RFC3339),
@@ -40,27 +43,24 @@ func ExecuteSuite(ctx context.Context, engines []driver.GraphEngine, data *datas
 				"total_nodes":         expectedNodes,
 				"total_relationships": expectedRels,
 			},
-			Ingestion: make(map[string]any),
+			Ingestion:     make(map[string]any),
+			IndexCreation: make(map[string]any),
 		}
 
 		report.ResourceFootprint = map[string]any{
 			"status":        "not_observable_via_driver",
-			"notes":         "Managed cloud free-tier telemetry is restricted; instance specifications are recorded in README Section 3.2.",
+			"notes":         "Managed cloud free-tier telemetry is restricted; instance specifications are recorded in README Section 3.",
 			"instance_tier": "Cloud Free / Entry Tier",
 		}
 
 		if err := engine.Connect(ctx); err != nil {
-			fmt.Printf("[%s] ❌ Connection failed: %v (skipping)\n", engine.Name(), err)
+			fmt.Printf("[%s] ❌ Connection failed: %v (skipping engine)\n", engine.Name(), err)
 			continue
 		}
 
 		if !skipLoad {
-			fmt.Printf("[%s] Pre-flight: Creating Index on User(id)...\n", engine.Name())
-			if err := engine.CreateIndex(ctx); err != nil {
-				fmt.Printf("[%s] ⚠️ Index creation warning: %v\n", engine.Name(), err)
-			}
-
-			fmt.Printf("[%s] Ingesting %d Nodes in batches of %d...\n", engine.Name(), expectedNodes, batchSize)
+			// Step 1: Raw Ingestion (timed before indexes exist)
+			fmt.Printf("[%s] Step 1: Ingesting %d Nodes in batches of %d...\n", engine.Name(), expectedNodes, batchSize)
 			startN := time.Now()
 			nInserted, err := engine.BulkInsertNodes(ctx, data.Users, batchSize)
 			if err != nil {
@@ -71,7 +71,7 @@ func ExecuteSuite(ctx context.Context, engines []driver.GraphEngine, data *datas
 			durN := time.Since(startN)
 			nPerSec := float64(nInserted) / durN.Seconds()
 
-			fmt.Printf("[%s] Ingesting %d Relationships in batches of %d...\n", engine.Name(), expectedRels, batchSize)
+			fmt.Printf("[%s] Step 1: Ingesting %d Relationships in batches of %d...\n", engine.Name(), expectedRels, batchSize)
 			startR := time.Now()
 			rInserted, err := engine.BulkInsertRelationships(ctx, data.Relationships, batchSize)
 			if err != nil {
@@ -81,7 +81,7 @@ func ExecuteSuite(ctx context.Context, engines []driver.GraphEngine, data *datas
 			}
 			durR := time.Since(startR)
 			rPerSec := float64(rInserted) / durR.Seconds()
-			totalTime := (durN + durR).Seconds()
+			totalLoadTime := (durN + durR).Seconds()
 
 			report.Ingestion = map[string]any{
 				"nodes_inserted":      nInserted,
@@ -90,15 +90,27 @@ func ExecuteSuite(ctx context.Context, engines []driver.GraphEngine, data *datas
 				"rels_inserted":       rInserted,
 				"rels_load_time_sec":  durR.Seconds(),
 				"rels_per_sec":        rPerSec,
-				"total_load_time_sec": totalTime,
+				"total_load_time_sec": totalLoadTime,
 			}
 			fmt.Printf("⏱️ [%s] INGESTION COMPLETE: Nodes: %5.0f/s | Rels: %5.0f/s | Total Time: %5.2fs\n",
-				engine.Name(), nPerSec, rPerSec, totalTime)
+				engine.Name(), nPerSec, rPerSec, totalLoadTime)
+
+			// Step 2: Create Index (timed separately)
+			fmt.Printf("[%s] Step 2: Creating Index on User(id)...\n", engine.Name())
+			idxStart := time.Now()
+			if err := engine.CreateIndex(ctx); err != nil {
+				fmt.Printf("[%s] ⚠️ Index creation warning: %v\n", engine.Name(), err)
+			}
+			idxDur := time.Since(idxStart)
+			report.IndexCreation = map[string]any{
+				"index_time_sec": idxDur.Seconds(),
+				"indexed_field":  "User(id)",
+			}
 		} else {
 			fmt.Printf("[%s] ⏩ Skipping ingestion as requested (--skip-load).\n", engine.Name())
 		}
 
-		// Hard Count Verification against canonical expectations
+		// Step 3: Hard Count Verification
 		vNodes, vRels, err := engine.VerifyCounts(ctx)
 		if err != nil {
 			fmt.Printf("[%s] ⚠️ Count verification error: %v\n", engine.Name(), err)
@@ -106,8 +118,10 @@ func ExecuteSuite(ctx context.Context, engines []driver.GraphEngine, data *datas
 			fmt.Printf("[%s] 🔍 Verification: %d Nodes, %d Relationships\n", engine.Name(), vNodes, vRels)
 		}
 
-		// Warm-up & Read Workloads across ALL query types
+		// Step 4: Complete Warm-up across ALL 6 workloads
 		RunWarmup(ctx, engine, cfg.WarmupIterations, data.UserIDs)
+
+		// Step 5: Read Benchmarks (100 runs each)
 		wReport, err := RunAllWorkloads(ctx, engine, cfg.BenchmarkIterations, data.UserIDs)
 		if err == nil {
 			report.Workloads = wReport
@@ -115,7 +129,7 @@ func ExecuteSuite(ctx context.Context, engines []driver.GraphEngine, data *datas
 			fmt.Printf("[%s] ⚠️ Workload execution error: %v\n", engine.Name(), err)
 		}
 
-		// Concurrency Sweeps (1, 10 & 40 workers)
+		// Step 6: Multi-Worker Concurrency Sweeps (1, 10, and 40 workers)
 		c1, _ := RunConcurrencySweep(ctx, engine, 1, 15*time.Second, data.UserIDs)
 		report.Concurrency1 = c1
 
@@ -132,7 +146,6 @@ func ExecuteSuite(ctx context.Context, engines []driver.GraphEngine, data *datas
 	return allResults
 }
 
-// SaveJSONReport exports benchmark results to a formatted JSON file with incremental merging
 func SaveJSONReport(path string, newResults map[string]FullBenchmarkReport) error {
 	_ = os.MkdirAll("results", 0755)
 

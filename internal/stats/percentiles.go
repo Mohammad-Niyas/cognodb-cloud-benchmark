@@ -1,6 +1,7 @@
 package stats
 
 import (
+	"math"
 	"sort"
 	"time"
 )
@@ -17,17 +18,20 @@ type LatencyResult struct {
 	ErrorRate  float64 `json:"error_rate_pct"`
 }
 
-// CalculatePercentiles
+// CalculatePercentiles computes latency percentiles using the standard NIST/Nearest-Rank method.
 func CalculatePercentiles(durations []time.Duration, errorCount int, totalRuns int) LatencyResult {
 	if len(durations) == 0 {
+		errRate := 0.0
+		if totalRuns > 0 {
+			errRate = (float64(errorCount) / float64(totalRuns)) * 100.0
+		}
 		return LatencyResult{
 			Count:      0,
 			ErrorCount: errorCount,
-			ErrorRate:  100.0,
+			ErrorRate:  errRate,
 		}
 	}
 
-	//  Sort durations from fastest to slowest
 	sort.Slice(durations, func(i, j int) bool {
 		return durations[i] < durations[j]
 	})
@@ -38,26 +42,26 @@ func CalculatePercentiles(durations []time.Duration, errorCount int, totalRuns i
 		total += d
 	}
 
-	// convert time.Duration to millisecond float
 	toMs := func(d time.Duration) float64 {
 		return float64(d.Nanoseconds()) / 1e6
 	}
 
-	p50Idx := int(float64(n) * 0.50)
-	p95Idx := int(float64(n) * 0.95)
-	p99Idx := int(float64(n) * 0.99)
+	// Nearest-rank method: rank = ceil(p * n)
+	getPercentile := func(p float64) float64 {
+		if n == 1 {
+			return toMs(durations[0])
+		}
+		rank := int(math.Ceil(p * float64(n)))
+		if rank < 1 {
+			rank = 1
+		}
+		if rank > n {
+			rank = n
+		}
+		return toMs(durations[rank-1])
+	}
 
-	if p50Idx >= n {
-		p50Idx = n - 1
-	}
-	if p95Idx >= n {
-		p95Idx = n - 1
-	}
-	if p99Idx >= n {
-		p99Idx = n - 1
-	}
-
-	var errRate float64
+	errRate := 0.0
 	if totalRuns > 0 {
 		errRate = (float64(errorCount) / float64(totalRuns)) * 100.0
 	}
@@ -65,9 +69,9 @@ func CalculatePercentiles(durations []time.Duration, errorCount int, totalRuns i
 	return LatencyResult{
 		Count:      n,
 		MinMs:      toMs(durations[0]),
-		P50Ms:      toMs(durations[p50Idx]),
-		P95Ms:      toMs(durations[p95Idx]),
-		P99Ms:      toMs(durations[p99Idx]),
+		P50Ms:      getPercentile(0.50),
+		P95Ms:      getPercentile(0.95),
+		P99Ms:      getPercentile(0.99),
 		MaxMs:      toMs(durations[n-1]),
 		AvgMs:      toMs(total / time.Duration(n)),
 		ErrorCount: errorCount,

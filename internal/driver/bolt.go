@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/Mohammad-Niyas/cognodb-cloud-benchmark/internal/dataset"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
@@ -41,7 +42,6 @@ func (b *BoltEngine) Connect(ctx context.Context) error {
 		return fmt.Errorf("[%s] driver creation failed: %w", b.name, err)
 	}
 
-	// Verify connectivity
 	if err := driver.VerifyConnectivity(ctx); err != nil {
 		return fmt.Errorf("[%s] connection verification failed: %w", b.name, err)
 	}
@@ -51,7 +51,6 @@ func (b *BoltEngine) Connect(ctx context.Context) error {
 	return nil
 }
 
-// closes the driver connection pool
 func (b *BoltEngine) Close(ctx context.Context) error {
 	if b.driver != nil {
 		return b.driver.Close(ctx)
@@ -59,7 +58,6 @@ func (b *BoltEngine) Close(ctx context.Context) error {
 	return nil
 }
 
-// CreateIndex creates an index on User(id) using the engine's supported Cypher dialect
 func (b *BoltEngine) CreateIndex(ctx context.Context) error {
 	session := b.driver.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeWrite})
 	defer session.Close(ctx)
@@ -87,7 +85,6 @@ func (b *BoltEngine) CreateIndex(ctx context.Context) error {
 	return err
 }
 
-// BulkInsertNodes loads using UNWIND
 func (b *BoltEngine) BulkInsertNodes(ctx context.Context, nodes []dataset.User, batchSize int) (int64, error) {
 	session := b.driver.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeWrite})
 	defer session.Close(ctx)
@@ -126,7 +123,6 @@ func (b *BoltEngine) BulkInsertNodes(ctx context.Context, nodes []dataset.User, 
 	return totalInserted, nil
 }
 
-// BulkInsertRelationships loads using UNWIND
 func (b *BoltEngine) BulkInsertRelationships(ctx context.Context, rels []dataset.Relationship, batchSize int) (int64, error) {
 	session := b.driver.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeWrite})
 	defer session.Close(ctx)
@@ -166,7 +162,6 @@ func (b *BoltEngine) BulkInsertRelationships(ctx context.Context, rels []dataset
 	return totalInserted, nil
 }
 
-// VerifyCounts  nodes and relationships
 func (b *BoltEngine) VerifyCounts(ctx context.Context) (int64, int64, error) {
 	session := b.driver.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeRead})
 	defer session.Close(ctx)
@@ -199,7 +194,6 @@ func (b *BoltEngine) VerifyCounts(ctx context.Context) (int64, int64, error) {
 	return nodeCount, relCount, err
 }
 
-// OneHop retrieves direct friends of startNodeID
 func (b *BoltEngine) OneHop(ctx context.Context, startNodeID int64) ([]int64, error) {
 	session := b.driver.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeRead})
 	defer session.Close(ctx)
@@ -227,7 +221,6 @@ func (b *BoltEngine) OneHop(ctx context.Context, startNodeID int64) ([]int64, er
 	return res.([]int64), nil
 }
 
-// TwoHop retrieves friends-of-friends (2 hops away)
 func (b *BoltEngine) TwoHop(ctx context.Context, startNodeID int64) ([]int64, error) {
 	session := b.driver.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeRead})
 	defer session.Close(ctx)
@@ -255,7 +248,6 @@ func (b *BoltEngine) TwoHop(ctx context.Context, startNodeID int64) ([]int64, er
 	return res.([]int64), nil
 }
 
-// ThreeHop retrieves 3-degree connections with a safety limit
 func (b *BoltEngine) ThreeHop(ctx context.Context, startNodeID int64, limit int) ([]int64, error) {
 	session := b.driver.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeRead})
 	defer session.Close(ctx)
@@ -283,7 +275,6 @@ func (b *BoltEngine) ThreeHop(ctx context.Context, startNodeID int64, limit int)
 	return res.([]int64), nil
 }
 
-// PointLookup fetches a single user by indexed ID
 func (b *BoltEngine) PointLookup(ctx context.Context, nodeID int64) (*dataset.User, error) {
 	session := b.driver.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeRead})
 	defer session.Close(ctx)
@@ -316,7 +307,6 @@ func (b *BoltEngine) PointLookup(ctx context.Context, nodeID int64) (*dataset.Us
 	return res.(*dataset.User), nil
 }
 
-// Aggregation computes the Top 10 most connected users in the graph
 func (b *BoltEngine) Aggregation(ctx context.Context) (int64, error) {
 	session := b.driver.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeRead})
 	defer session.Close(ctx)
@@ -345,21 +335,21 @@ func (b *BoltEngine) Aggregation(ctx context.Context) (int64, error) {
 	return res.(int64), nil
 }
 
-// WriteRelationship creates a single friendship edge between two users
+// WriteRelationship creates/updates interaction edge without creating duplicate FRIEND topologies
 func (b *BoltEngine) WriteRelationship(ctx context.Context, fromID, toID int64) error {
 	session := b.driver.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeWrite})
 	defer session.Close(ctx)
 	_, err := session.ExecuteWrite(ctx, func(tx neo4j.ManagedTransaction) (any, error) {
 		query := `
 			MATCH (a:User {id: $from}), (b:User {id: $to})
-			CREATE (a)-[:FRIEND]->(b)
+			MERGE (a)-[r:INTERACTION]->(b)
+			SET r.last_updated = $ts
 		`
-		return tx.Run(ctx, query, map[string]any{"from": fromID, "to": toID})
+		return tx.Run(ctx, query, map[string]any{"from": fromID, "to": toID, "ts": time.Now().UnixNano()})
 	})
 	return err
 }
 
-// FilteredLookup searches for users matching a specific age property filter
 func (b *BoltEngine) FilteredLookup(ctx context.Context, age int) ([]int64, error) {
 	session := b.driver.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeRead})
 	defer session.Close(ctx)

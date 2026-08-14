@@ -13,7 +13,6 @@ import (
 	"github.com/Mohammad-Niyas/cognodb-cloud-benchmark/internal/dataset"
 )
 
-// ArangoEngine implements GraphEngine for ArangoDB using its HTTP REST API
 type ArangoEngine struct {
 	name     string
 	uri      string
@@ -43,7 +42,6 @@ func (a *ArangoEngine) Name() string {
 	return a.name
 }
 
-// Connect
 func (a *ArangoEngine) Connect(ctx context.Context) error {
 	url := fmt.Sprintf("%s/_api/version", a.uri)
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
@@ -59,7 +57,7 @@ func (a *ArangoEngine) Connect(ctx context.Context) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("[%s] auth failed with status: %d", a.name, resp.StatusCode)
+		return fmt.Errorf("[%s] auth failed with HTTP status: %d", a.name, resp.StatusCode)
 	}
 
 	fmt.Printf("[%s] Connected successfully to %s\n", a.name, a.uri)
@@ -70,10 +68,13 @@ func (a *ArangoEngine) Close(ctx context.Context) error {
 	return nil
 }
 
-// CreateIndex  on User(id)
 func (a *ArangoEngine) CreateIndex(ctx context.Context) error {
-	_ = a.createCollection(ctx, "User", 2)
-	_ = a.createCollection(ctx, "FRIEND", 3)
+	if err := a.createCollection(ctx, "User", 2); err != nil {
+		return fmt.Errorf("create User collection: %w", err)
+	}
+	if err := a.createCollection(ctx, "FRIEND", 3); err != nil {
+		return fmt.Errorf("create FRIEND collection: %w", err)
+	}
 
 	url := fmt.Sprintf("%s/_db/%s/_api/index?collection=User", a.uri, a.database)
 	payload := map[string]any{
@@ -83,7 +84,10 @@ func (a *ArangoEngine) CreateIndex(ctx context.Context) error {
 	}
 	body, _ := json.Marshal(payload)
 
-	req, _ := http.NewRequestWithContext(ctx, "POST", url, bytes.NewReader(body))
+	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewReader(body))
+	if err != nil {
+		return err
+	}
 	req.SetBasicAuth(a.user, a.password)
 	req.Header.Set("Content-Type", "application/json")
 
@@ -92,6 +96,11 @@ func (a *ArangoEngine) CreateIndex(ctx context.Context) error {
 		return err
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		respBytes, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("create index failed with status %d: %s", resp.StatusCode, string(respBytes))
+	}
 
 	return nil
 }
@@ -104,7 +113,10 @@ func (a *ArangoEngine) createCollection(ctx context.Context, name string, colTyp
 	}
 	body, _ := json.Marshal(payload)
 
-	req, _ := http.NewRequestWithContext(ctx, "POST", url, bytes.NewReader(body))
+	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewReader(body))
+	if err != nil {
+		return err
+	}
 	req.SetBasicAuth(a.user, a.password)
 	req.Header.Set("Content-Type", "application/json")
 
@@ -113,10 +125,14 @@ func (a *ArangoEngine) createCollection(ctx context.Context, name string, colTyp
 		return err
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusConflict {
+		respBytes, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("collection creation for %s failed with status %d: %s", name, resp.StatusCode, string(respBytes))
+	}
 	return nil
 }
 
-// BulkInsertNodes loads
 func (a *ArangoEngine) BulkInsertNodes(ctx context.Context, nodes []dataset.User, batchSize int) (int64, error) {
 	var totalInserted int64
 	url := fmt.Sprintf("%s/_db/%s/_api/document/User", a.uri, a.database)
@@ -137,8 +153,14 @@ func (a *ArangoEngine) BulkInsertNodes(ctx context.Context, nodes []dataset.User
 			})
 		}
 
-		body, _ := json.Marshal(batch)
-		req, _ := http.NewRequestWithContext(ctx, "POST", url, bytes.NewReader(body))
+		body, err := json.Marshal(batch)
+		if err != nil {
+			return totalInserted, err
+		}
+		req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewReader(body))
+		if err != nil {
+			return totalInserted, err
+		}
 		req.SetBasicAuth(a.user, a.password)
 		req.Header.Set("Content-Type", "application/json")
 
@@ -146,14 +168,18 @@ func (a *ArangoEngine) BulkInsertNodes(ctx context.Context, nodes []dataset.User
 		if err != nil {
 			return totalInserted, fmt.Errorf("[%s] node batch failed at %d: %w", a.name, i, err)
 		}
-		resp.Body.Close()
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted && resp.StatusCode != http.StatusCreated {
+			respBytes, _ := io.ReadAll(resp.Body)
+			return totalInserted, fmt.Errorf("[%s] node batch status %d: %s", a.name, resp.StatusCode, string(respBytes))
+		}
 
 		totalInserted += int64(len(batch))
 	}
 	return totalInserted, nil
 }
 
-// BulkInsertRelationships loads
 func (a *ArangoEngine) BulkInsertRelationships(ctx context.Context, rels []dataset.Relationship, batchSize int) (int64, error) {
 	var totalInserted int64
 	url := fmt.Sprintf("%s/_db/%s/_api/document/FRIEND", a.uri, a.database)
@@ -172,8 +198,14 @@ func (a *ArangoEngine) BulkInsertRelationships(ctx context.Context, rels []datas
 			})
 		}
 
-		body, _ := json.Marshal(batch)
-		req, _ := http.NewRequestWithContext(ctx, "POST", url, bytes.NewReader(body))
+		body, err := json.Marshal(batch)
+		if err != nil {
+			return totalInserted, err
+		}
+		req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewReader(body))
+		if err != nil {
+			return totalInserted, err
+		}
 		req.SetBasicAuth(a.user, a.password)
 		req.Header.Set("Content-Type", "application/json")
 
@@ -181,14 +213,18 @@ func (a *ArangoEngine) BulkInsertRelationships(ctx context.Context, rels []datas
 		if err != nil {
 			return totalInserted, fmt.Errorf("[%s] rel batch failed at %d: %w", a.name, i, err)
 		}
-		resp.Body.Close()
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted && resp.StatusCode != http.StatusCreated {
+			respBytes, _ := io.ReadAll(resp.Body)
+			return totalInserted, fmt.Errorf("[%s] rel batch status %d: %s", a.name, resp.StatusCode, string(respBytes))
+		}
 
 		totalInserted += int64(len(batch))
 	}
 	return totalInserted, nil
 }
 
-// VerifyCounts  nodes and relationships
 func (a *ArangoEngine) VerifyCounts(ctx context.Context) (int64, int64, error) {
 	nodeCount, err := a.runCountQuery(ctx, "FOR u IN User COLLECT WITH COUNT INTO length RETURN length")
 	if err != nil {
@@ -214,17 +250,25 @@ func (a *ArangoEngine) runCountQuery(ctx context.Context, aql string) (int64, er
 	return 0, nil
 }
 
+// runAQL executes query and handles cursor pagination & error responses
 func (a *ArangoEngine) runAQL(ctx context.Context, query string, bindVars map[string]any) ([]any, error) {
 	url := fmt.Sprintf("%s/_db/%s/_api/cursor", a.uri, a.database)
 	payload := map[string]any{
-		"query": query,
+		"query":     query,
+		"batchSize": 10000,
 	}
 	if bindVars != nil {
 		payload["bindVars"] = bindVars
 	}
 
-	body, _ := json.Marshal(payload)
-	req, _ := http.NewRequestWithContext(ctx, "POST", url, bytes.NewReader(body))
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewReader(body))
+	if err != nil {
+		return nil, err
+	}
 	req.SetBasicAuth(a.user, a.password)
 	req.Header.Set("Content-Type", "application/json")
 
@@ -234,19 +278,56 @@ func (a *ArangoEngine) runAQL(ctx context.Context, query string, bindVars map[st
 	}
 	defer resp.Body.Close()
 
-	respBytes, _ := io.ReadAll(resp.Body)
-	var result struct {
-		Result []any `json:"result"`
-		Error  bool  `json:"error"`
-	}
-	if err := json.Unmarshal(respBytes, &result); err != nil {
-		return nil, err
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		respBytes, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("AQL failed with HTTP %d: %s", resp.StatusCode, string(respBytes))
 	}
 
-	return result.Result, nil
+	var cursorResp struct {
+		Result   []any  `json:"result"`
+		HasMore  bool   `json:"hasMore"`
+		ID       string `json:"id"`
+		Error    bool   `json:"error"`
+		ErrorNum int    `json:"errorNum"`
+		ErrMsg   string `json:"errorMessage"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&cursorResp); err != nil {
+		return nil, fmt.Errorf("decode cursor error: %w", err)
+	}
+
+	if cursorResp.Error {
+		return nil, fmt.Errorf("AQL error (%d): %s", cursorResp.ErrorNum, cursorResp.ErrMsg)
+	}
+
+	allResults := cursorResp.Result
+
+	// Follow pagination if hasMore is true
+	for cursorResp.HasMore && cursorResp.ID != "" {
+		nextURL := fmt.Sprintf("%s/_db/%s/_api/cursor/%s", a.uri, a.database, cursorResp.ID)
+		nextReq, err := http.NewRequestWithContext(ctx, "PUT", nextURL, nil)
+		if err != nil {
+			break
+		}
+		nextReq.SetBasicAuth(a.user, a.password)
+
+		nextResp, err := a.client.Do(nextReq)
+		if err != nil {
+			break
+		}
+
+		if err := json.NewDecoder(nextResp.Body).Decode(&cursorResp); err != nil {
+			nextResp.Body.Close()
+			break
+		}
+		nextResp.Body.Close()
+
+		allResults = append(allResults, cursorResp.Result...)
+	}
+
+	return allResults, nil
 }
 
-// OneHop traversal
 func (a *ArangoEngine) OneHop(ctx context.Context, startNodeID int64) ([]int64, error) {
 	query := `FOR v IN 1..1 OUTBOUND CONCAT('User/', @id) FRIEND RETURN v.id`
 	res, err := a.runAQL(ctx, query, map[string]any{"id": fmt.Sprintf("%d", startNodeID)})
@@ -263,7 +344,6 @@ func (a *ArangoEngine) OneHop(ctx context.Context, startNodeID int64) ([]int64, 
 	return ids, nil
 }
 
-// TwoHop traversal
 func (a *ArangoEngine) TwoHop(ctx context.Context, startNodeID int64) ([]int64, error) {
 	query := `FOR v IN 2..2 OUTBOUND CONCAT('User/', @id) FRIEND RETURN DISTINCT v.id`
 	res, err := a.runAQL(ctx, query, map[string]any{"id": fmt.Sprintf("%d", startNodeID)})
@@ -280,7 +360,6 @@ func (a *ArangoEngine) TwoHop(ctx context.Context, startNodeID int64) ([]int64, 
 	return ids, nil
 }
 
-// ThreeHop traversal
 func (a *ArangoEngine) ThreeHop(ctx context.Context, startNodeID int64, limit int) ([]int64, error) {
 	query := `FOR v IN 3..3 OUTBOUND CONCAT('User/', @id) FRIEND LIMIT @limit RETURN DISTINCT v.id`
 	res, err := a.runAQL(ctx, query, map[string]any{"id": fmt.Sprintf("%d", startNodeID), "limit": limit})
@@ -297,7 +376,6 @@ func (a *ArangoEngine) ThreeHop(ctx context.Context, startNodeID int64, limit in
 	return ids, nil
 }
 
-// PointLookup
 func (a *ArangoEngine) PointLookup(ctx context.Context, nodeID int64) (*dataset.User, error) {
 	query := `FOR u IN User FILTER u.id == @id RETURN {id: u.id, age: u.age, gender: u.gender}`
 	res, err := a.runAQL(ctx, query, map[string]any{"id": nodeID})
@@ -329,7 +407,6 @@ func (a *ArangoEngine) PointLookup(ctx context.Context, nodeID int64) (*dataset.
 	}, nil
 }
 
-// Aggregation computes the Top 10 most connected users using AQL
 func (a *ArangoEngine) Aggregation(ctx context.Context) (int64, error) {
 	query := `
 		FOR r IN FRIEND
@@ -338,45 +415,18 @@ func (a *ArangoEngine) Aggregation(ctx context.Context) (int64, error) {
 		LIMIT 10
 		RETURN { user_id: user_id, friend_count: friend_count }
 	`
-	payload := map[string]any{"query": query}
-	body, err := json.Marshal(payload)
+	res, err := a.runAQL(ctx, query, nil)
 	if err != nil {
 		return 0, err
 	}
-
-	url := fmt.Sprintf("%s/_db/%s/_api/cursor", a.uri, a.database)
-	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewReader(body))
-	if err != nil {
-		return 0, err
-	}
-	req.SetBasicAuth(a.user, a.password)
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := a.client.Do(req)
-	if err != nil {
-		return 0, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
-		return 0, fmt.Errorf("aggregation failed with status: %d", resp.StatusCode)
-	}
-
-	var response struct {
-		Result []any `json:"result"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		return 0, err
-	}
-
-	return int64(len(response.Result)), nil
+	return int64(len(res)), nil
 }
 
-// WriteRelationship creates a single friendship edge in the FRIEND edge collection
 func (a *ArangoEngine) WriteRelationship(ctx context.Context, fromID, toID int64) error {
-	edge := map[string]string{
-		"_from": fmt.Sprintf("User/%d", fromID),
-		"_to":   fmt.Sprintf("User/%d", toID),
+	edge := map[string]any{
+		"_from":     fmt.Sprintf("User/%d", fromID),
+		"_to":       fmt.Sprintf("User/%d", toID),
+		"timestamp": time.Now().UnixNano(),
 	}
 	body, err := json.Marshal(edge)
 	if err != nil {
@@ -397,50 +447,21 @@ func (a *ArangoEngine) WriteRelationship(ctx context.Context, fromID, toID int64
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusAccepted && resp.StatusCode != http.StatusCreated {
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return fmt.Errorf("edge write failed with status: %d", resp.StatusCode)
 	}
 	return nil
 }
 
-// FilteredLookup searches for users matching a specific age property filter using AQL
 func (a *ArangoEngine) FilteredLookup(ctx context.Context, age int) ([]int64, error) {
-	payload := map[string]any{
-		"query":    "FOR u IN User FILTER u.age == @age LIMIT 100 RETURN u.id",
-		"bindVars": map[string]any{"age": age},
-	}
-	body, err := json.Marshal(payload)
+	query := `FOR u IN User FILTER u.age == @age LIMIT 100 RETURN u.id`
+	res, err := a.runAQL(ctx, query, map[string]any{"age": age})
 	if err != nil {
-		return nil, err
-	}
-
-	url := fmt.Sprintf("%s/_db/%s/_api/cursor", a.uri, a.database)
-	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewReader(body))
-	if err != nil {
-		return nil, err
-	}
-	req.SetBasicAuth(a.user, a.password)
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := a.client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
-		return nil, fmt.Errorf("filtered lookup failed with status: %d", resp.StatusCode)
-	}
-
-	var response struct {
-		Result []any `json:"result"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return nil, err
 	}
 
 	var ids []int64
-	for _, val := range response.Result {
+	for _, val := range res {
 		switch v := val.(type) {
 		case float64:
 			ids = append(ids, int64(v))

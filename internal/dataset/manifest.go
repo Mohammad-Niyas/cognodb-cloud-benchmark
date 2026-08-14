@@ -23,7 +23,18 @@ type Manifest struct {
 	RelsFileSHA256     string `json:"relationships_file_sha256"`
 }
 
-// WriteCanonicalCSVs writes the sampled graph into standard CSV files
+func LoadManifest(path string) (*Manifest, error) {
+	bytes, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	var m Manifest
+	if err := json.Unmarshal(bytes, &m); err != nil {
+		return nil, err
+	}
+	return &m, nil
+}
+
 func WriteCanonicalCSVs(graph *SampledGraph, nodesPath, relsPath string) error {
 	fmt.Printf("[Writer] Writing %d nodes to %s...\n", len(graph.Users), nodesPath)
 
@@ -34,7 +45,6 @@ func WriteCanonicalCSVs(graph *SampledGraph, nodesPath, relsPath string) error {
 	defer nodeFile.Close()
 
 	nodeWriter := csv.NewWriter(nodeFile)
-	// Header
 	if err := nodeWriter.Write([]string{"id", "age", "gender"}); err != nil {
 		return err
 	}
@@ -93,10 +103,7 @@ func ComputeSHA256(filePath string) (string, error) {
 	return hex.EncodeToString(hasher.Sum(nil)), nil
 }
 
-// GenerateManifest writes data/manifest.json containing dataset stats and checksums
 func GenerateManifest(nodesPath, relsPath, manifestPath string, nodeCount, relCount int, startNodeID int64) error {
-	fmt.Printf("[Manifest] Computing SHA-256 checksums...\n")
-
 	nodeHash, err := ComputeSHA256(nodesPath)
 	if err != nil {
 		return fmt.Errorf("failed to hash nodes file: %w", err)
@@ -126,6 +133,5 @@ func GenerateManifest(nodesPath, relsPath, manifestPath string, nodeCount, relCo
 		return fmt.Errorf("failed to write manifest file: %w", err)
 	}
 
-	fmt.Printf("[Manifest] Successfully generated %s\n", manifestPath)
 	return nil
 }
