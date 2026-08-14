@@ -43,7 +43,6 @@ func main() {
 	results := runner.ExecuteSuite(context.Background(), engines, data, cfg, *skipLoad, *batchSize)
 	_ = runner.SaveJSONReport("results/bench_results.json", results)
 
-	
 	fmt.Println("ALL BENCHMARKS COMPLETED!")
 	fmt.Println(" Full JSON report written to: results/bench_results.json")
 }

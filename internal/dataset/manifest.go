@@ -14,19 +14,19 @@ import (
 
 // Manifest represents the metadata and checksums of the canonical dataset
 type Manifest struct {
-	GeneratedAt       string `json:"generated_at"`
-	SamplingMethod    string `json:"sampling_method"`
-	StartNodeID       int64  `json:"start_node_id"`
-	TotalNodes        int    `json:"total_nodes"`
-	TotalRelationships int   `json:"total_relationships"`
-	NodesFileSHA256   string `json:"nodes_file_sha256"`
-	RelsFileSHA256    string `json:"relationships_file_sha256"`
+	GeneratedAt        string `json:"generated_at"`
+	SamplingMethod     string `json:"sampling_method"`
+	StartNodeID        int64  `json:"start_node_id"`
+	TotalNodes         int    `json:"total_nodes"`
+	TotalRelationships int    `json:"total_relationships"`
+	NodesFileSHA256    string `json:"nodes_file_sha256"`
+	RelsFileSHA256     string `json:"relationships_file_sha256"`
 }
 
 // WriteCanonicalCSVs writes the sampled graph into standard CSV files
 func WriteCanonicalCSVs(graph *SampledGraph, nodesPath, relsPath string) error {
 	fmt.Printf("[Writer] Writing %d nodes to %s...\n", len(graph.Users), nodesPath)
-	
+
 	nodeFile, err := os.Create(nodesPath)
 	if err != nil {
 		return fmt.Errorf("failed to create nodes file: %w", err)
@@ -52,7 +52,7 @@ func WriteCanonicalCSVs(graph *SampledGraph, nodesPath, relsPath string) error {
 	nodeWriter.Flush()
 
 	fmt.Printf("[Writer] Writing %d relationships to %s...\n", len(graph.Relationships), relsPath)
-	
+
 	relFile, err := os.Create(relsPath)
 	if err != nil {
 		return fmt.Errorf("failed to create relationships file: %w", err)

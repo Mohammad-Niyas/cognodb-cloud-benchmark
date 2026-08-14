@@ -116,7 +116,7 @@ func (a *ArangoEngine) createCollection(ctx context.Context, name string, colTyp
 	return nil
 }
 
-// BulkInsertNodes loads 
+// BulkInsertNodes loads
 func (a *ArangoEngine) BulkInsertNodes(ctx context.Context, nodes []dataset.User, batchSize int) (int64, error) {
 	var totalInserted int64
 	url := fmt.Sprintf("%s/_db/%s/_api/document/User", a.uri, a.database)
@@ -246,7 +246,7 @@ func (a *ArangoEngine) runAQL(ctx context.Context, query string, bindVars map[st
 	return result.Result, nil
 }
 
-// OneHop traversal 
+// OneHop traversal
 func (a *ArangoEngine) OneHop(ctx context.Context, startNodeID int64) ([]int64, error) {
 	query := `FOR v IN 1..1 OUTBOUND CONCAT('User/', @id) FRIEND RETURN v.id`
 	res, err := a.runAQL(ctx, query, map[string]any{"id": fmt.Sprintf("%d", startNodeID)})
@@ -263,7 +263,7 @@ func (a *ArangoEngine) OneHop(ctx context.Context, startNodeID int64) ([]int64, 
 	return ids, nil
 }
 
-// TwoHop traversal 
+// TwoHop traversal
 func (a *ArangoEngine) TwoHop(ctx context.Context, startNodeID int64) ([]int64, error) {
 	query := `FOR v IN 2..2 OUTBOUND CONCAT('User/', @id) FRIEND RETURN DISTINCT v.id`
 	res, err := a.runAQL(ctx, query, map[string]any{"id": fmt.Sprintf("%d", startNodeID)})
@@ -297,7 +297,7 @@ func (a *ArangoEngine) ThreeHop(ctx context.Context, startNodeID int64, limit in
 	return ids, nil
 }
 
-// PointLookup 
+// PointLookup
 func (a *ArangoEngine) PointLookup(ctx context.Context, nodeID int64) (*dataset.User, error) {
 	query := `FOR u IN User FILTER u.id == @id RETURN {id: u.id, age: u.age, gender: u.gender}`
 	res, err := a.runAQL(ctx, query, map[string]any{"id": nodeID})

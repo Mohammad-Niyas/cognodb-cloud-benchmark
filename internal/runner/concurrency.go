@@ -18,13 +18,15 @@ type ConcurrencyReport struct {
 	DurationSec   float64             `json:"duration_sec"`
 	TotalQueries  int64               `json:"total_queries"`
 	SustainedQPS  float64             `json:"sustained_qps"`
+	AttemptedQPS  float64             `json:"attempted_qps"`
 	LatencyResult stats.LatencyResult `json:"latency_result"`
 }
 
 // RunConcurrencySweep executes a multi-client concurrent mixed read/write stress test
 func RunConcurrencySweep(ctx context.Context, engine driver.GraphEngine, numWorkers int, duration time.Duration, sampleNodeIDs []int64) (*ConcurrencyReport, error) {
+	fmt.Printf("\n==========================================================\n")
 	fmt.Printf("  CONCURRENCY STRESS TEST: %s (%d Workers, %v Duration)\n", engine.Name(), numWorkers, duration)
-	fmt.Println()
+	fmt.Printf("==========================================================\n")
 
 	if len(sampleNodeIDs) == 0 {
 		sampleNodeIDs = []int64{1}
@@ -34,16 +36,19 @@ func RunConcurrencySweep(ctx context.Context, engine driver.GraphEngine, numWork
 	var totalQueries int64
 	var errorCount int64
 
-	latenciesChan := make(chan time.Duration, 50000)
-	stopChan := make(chan struct{})
+	var mu sync.Mutex
+	var durations []time.Duration
 
+	stopChan := make(chan struct{})
 	startTime := time.Now()
 
 	for w := 0; w < numWorkers; w++ {
 		wg.Add(1)
 		go func(workerID int) {
 			defer wg.Done()
-			rng := rand.New(rand.NewSource(time.Now().UnixNano() + int64(workerID)))
+			// Deterministic seed per worker + concurrency level
+			seed := time.Now().UnixNano() + int64(workerID*1000) + int64(numWorkers)
+			rng := rand.New(rand.NewSource(seed))
 
 			for {
 				select {
@@ -71,10 +76,9 @@ func RunConcurrencySweep(ctx context.Context, engine driver.GraphEngine, numWork
 					if err != nil {
 						atomic.AddInt64(&errorCount, 1)
 					} else {
-						select {
-						case latenciesChan <- dur:
-						default:
-						}
+						mu.Lock()
+						durations = append(durations, dur)
+						mu.Unlock()
 					}
 				}
 			}
@@ -84,18 +88,14 @@ func RunConcurrencySweep(ctx context.Context, engine driver.GraphEngine, numWork
 	time.Sleep(duration)
 	close(stopChan)
 	wg.Wait()
-	close(latenciesChan)
 
 	elapsedSec := time.Since(startTime).Seconds()
-
-	var durations []time.Duration
-	for d := range latenciesChan {
-		durations = append(durations, d)
-	}
-
 	total := atomic.LoadInt64(&totalQueries)
 	errs := atomic.LoadInt64(&errorCount)
-	qps := float64(total) / elapsedSec
+	successfulOps := int64(len(durations))
+
+	sustainedQPS := float64(successfulOps) / elapsedSec
+	attemptedQPS := float64(total) / elapsedSec
 
 	latResult := stats.CalculatePercentiles(durations, int(errs), int(total))
 
@@ -104,12 +104,13 @@ func RunConcurrencySweep(ctx context.Context, engine driver.GraphEngine, numWork
 		WorkerCount:   numWorkers,
 		DurationSec:   elapsedSec,
 		TotalQueries:  total,
-		SustainedQPS:  qps,
+		SustainedQPS:  sustainedQPS,
+		AttemptedQPS:  attemptedQPS,
 		LatencyResult: latResult,
 	}
 
-	fmt.Printf("   🚀 %-12s | Workers: %2d | QPS: %7.1f | p50: %6.2fms | p95: %6.2fms | Errors: %d (%3.1f%%)\n",
-		engine.Name(), numWorkers, qps, latResult.P50Ms, latResult.P95Ms, errs, latResult.ErrorRate)
+	fmt.Printf("   🚀 %-12s | Workers: %2d | Sustained QPS: %7.1f | Attempt QPS: %7.1f | p50: %6.2fms | p95: %6.2fms | Errors: %d (%3.1f%%)\n",
+		engine.Name(), numWorkers, sustainedQPS, attemptedQPS, latResult.P50Ms, latResult.P95Ms, errs, latResult.ErrorRate)
 
 	return report, nil
 }

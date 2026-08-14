@@ -51,7 +51,7 @@ func (b *BoltEngine) Connect(ctx context.Context) error {
 	return nil
 }
 
-//  closes the driver connection pool
+// closes the driver connection pool
 func (b *BoltEngine) Close(ctx context.Context) error {
 	if b.driver != nil {
 		return b.driver.Close(ctx)
