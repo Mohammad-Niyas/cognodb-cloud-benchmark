@@ -279,6 +279,142 @@
       }
     }
   },
+  "Memgraph Cloud": {
+    "timestamp": "2026-08-14T04:22:41Z",
+    "dataset_summary": {
+      "total_nodes": 30000,
+      "total_relationships": 393090
+    },
+    "resource_footprint": {
+      "instance_tier": "Cloud Free / Entry Tier",
+      "notes": "Managed cloud free-tier telemetry is restricted; instance specifications are recorded in README Section 3.2.",
+      "status": "not_observable_via_driver"
+    },
+    "ingestion_metrics": {},
+    "read_workloads": {
+      "engine_name": "Memgraph Cloud",
+      "one_hop": {
+        "count": 100,
+        "min_ms": 779.954102,
+        "p50_ms": 852.077881,
+        "p95_ms": 862.045851,
+        "p99_ms": 1047.898854,
+        "max_ms": 1047.898854,
+        "avg_ms": 832.402521,
+        "error_count": 0,
+        "error_rate_pct": 0
+      },
+      "two_hop": {
+        "count": 100,
+        "min_ms": 781.159108,
+        "p50_ms": 870.336539,
+        "p95_ms": 1028.655825,
+        "p99_ms": 2181.912684,
+        "max_ms": 2181.912684,
+        "avg_ms": 881.083997,
+        "error_count": 0,
+        "error_rate_pct": 0
+      },
+      "three_hop": {
+        "count": 100,
+        "min_ms": 781.998537,
+        "p50_ms": 853.93002,
+        "p95_ms": 919.825346,
+        "p99_ms": 961.053531,
+        "max_ms": 961.053531,
+        "avg_ms": 859.752875,
+        "error_count": 0,
+        "error_rate_pct": 0
+      },
+      "point_lookup": {
+        "count": 100,
+        "min_ms": 799.009895,
+        "p50_ms": 848.227002,
+        "p95_ms": 854.899916,
+        "p99_ms": 908.737647,
+        "max_ms": 908.737647,
+        "avg_ms": 845.766353,
+        "error_count": 0,
+        "error_rate_pct": 0
+      },
+      "filtered_lookup": {
+        "count": 100,
+        "min_ms": 837.471849,
+        "p50_ms": 844.54619,
+        "p95_ms": 850.98955,
+        "p99_ms": 946.967067,
+        "max_ms": 946.967067,
+        "avg_ms": 845.827553,
+        "error_count": 0,
+        "error_rate_pct": 0
+      },
+      "aggregation": {
+        "count": 100,
+        "min_ms": 1069.263718,
+        "p50_ms": 1089.998667,
+        "p95_ms": 1216.94703,
+        "p99_ms": 1556.960998,
+        "max_ms": 1556.960998,
+        "avg_ms": 1105.537059,
+        "error_count": 0,
+        "error_rate_pct": 0
+      }
+    },
+    "concurrency_1_worker": {
+      "engine_name": "Memgraph Cloud",
+      "worker_count": 1,
+      "duration_sec": 15.321795249000001,
+      "total_queries": 18,
+      "sustained_qps": 1.174797059187617,
+      "latency_result": {
+        "count": 18,
+        "min_ms": 840.902462,
+        "p50_ms": 847.031072,
+        "p95_ms": 871.282094,
+        "p99_ms": 871.282094,
+        "max_ms": 871.282094,
+        "avg_ms": 851.181718,
+        "error_count": 0,
+        "error_rate_pct": 0
+      }
+    },
+    "concurrency_10_workers": {
+      "engine_name": "Memgraph Cloud",
+      "worker_count": 10,
+      "duration_sec": 15.853011024,
+      "total_queries": 169,
+      "sustained_qps": 10.6604354052457,
+      "latency_result": {
+        "count": 169,
+        "min_ms": 801.288587,
+        "p50_ms": 841.096975,
+        "p95_ms": 1886.16052,
+        "p99_ms": 2077.336258,
+        "max_ms": 2085.867204,
+        "avg_ms": 908.299435,
+        "error_count": 0,
+        "error_rate_pct": 0
+      }
+    },
+    "concurrency_40_workers": {
+      "engine_name": "Memgraph Cloud",
+      "worker_count": 40,
+      "duration_sec": 16.026507427,
+      "total_queries": 499,
+      "sustained_qps": 31.135916685087,
+      "latency_result": {
+        "count": 499,
+        "min_ms": 905.646836,
+        "p50_ms": 1162.346563,
+        "p95_ms": 2475.678655,
+        "p99_ms": 2708.254396,
+        "max_ms": 2830.413146,
+        "avg_ms": 1251.814691,
+        "error_count": 0,
+        "error_rate_pct": 0
+      }
+    }
+  },
   "Neo4j AuraDB": {
     "timestamp": "2026-08-13T20:11:42Z",
     "dataset_summary": {

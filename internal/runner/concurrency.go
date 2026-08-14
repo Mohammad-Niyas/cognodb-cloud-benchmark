@@ -23,9 +23,8 @@ type ConcurrencyReport struct {
 
 // RunConcurrencySweep executes a multi-client concurrent mixed read/write stress test
 func RunConcurrencySweep(ctx context.Context, engine driver.GraphEngine, numWorkers int, duration time.Duration, sampleNodeIDs []int64) (*ConcurrencyReport, error) {
-	fmt.Printf("\n==========================================================\n")
 	fmt.Printf("  CONCURRENCY STRESS TEST: %s (%d Workers, %v Duration)\n", engine.Name(), numWorkers, duration)
-	fmt.Printf("==========================================================\n")
+	fmt.Println()
 
 	if len(sampleNodeIDs) == 0 {
 		sampleNodeIDs = []int64{1}

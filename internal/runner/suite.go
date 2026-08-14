@@ -114,11 +114,11 @@ func ExecuteSuite(ctx context.Context, engines []driver.GraphEngine, data *datas
 func SaveJSONReport(path string, newResults map[string]FullBenchmarkReport) error {
 	_ = os.MkdirAll("results", 0755)
 	existingMap := make(map[string]FullBenchmarkReport)
-	// Read existing JSON file if it exists
+
 	if existingBytes, err := os.ReadFile(path); err == nil {
 		_ = json.Unmarshal(existingBytes, &existingMap)
 	}
-	// Merge new results into existing map
+
 	for k, v := range newResults {
 		existingMap[k] = v
 	}
